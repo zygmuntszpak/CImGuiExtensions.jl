@@ -1,0 +1,214 @@
+include("abstract_types.jl")
+
+struct Path
+    directory::String
+    filename::String
+end
+
+
+mutable struct FileDialogModel <: AbstractDialogModel
+    confirmed_path::Path
+    unconfirmed_path::Path
+end
+
+
+struct ConfirmedStatus <: AbstractStatus end
+struct UnconfirmedStatus <: AbstractStatus end
+
+struct FileDialogDisplayProperties <: AbstractDisplayProperties
+    caption::String
+    action::String
+    cursor_position::ImVec2
+    width::Cfloat
+    heigh::Cfloat
+end
+
+include("filedialog_controller.jl")
+include("csv_importer.jl")
+include("image_importer.jl")
+
+
+function get_path(model::FileDialogModel, status::ConfirmedStatus)
+    model.confirmed_path
+end
+
+function get_path(model::FileDialogModel, status::UnconfirmedStatus)
+    model.unconfirmed_path
+end
+
+function set_path!(model::FileDialogModel, path::Path, status::ConfirmedStatus)
+    model.confirmed_path = path
+end
+
+function set_path!(model::FileDialogModel, path::Path, status::UnconfirmedStatus)
+    model.unconfirmed_path = path
+end
+
+function get_caption(property::FileDialogDisplayProperties)
+    property.caption
+end
+
+function get_action(property::FileDialogDisplayProperties)
+    property.action
+end
+
+function get_cursor_position(property::FileDialogDisplayProperties)
+    property.cursor_position
+end
+
+function get_width(property::FileDialogDisplayProperties)
+    property.get_width
+end
+
+function get_height(property::FileDialogDisplayProperties)
+    property.height
+end
+
+function get_directory(p::Path)
+    p.directory
+end
+
+function get_filename(p::Path)
+    p.filename
+end
+
+function (control::FileDialogController)(model::FileDialogModel, properties::AbstractDisplayProperties, importer::AbstractImporter)
+    @c CImGui.Begin(get_caption(properties), &control.isenabled)
+        facilitate_path_selection!(model)
+        facilitate_directory_file_selection!(model)
+        handle_cancellation_confirmation!(control, model,  get_action(properties), importer)
+        handle_file_error_messaging()
+    CImGui.End()
+end
+
+function facilitate_path_selection!(model::FileDialogModel)
+    path = get_path(model,  UnconfirmedStatus())
+    path_directories = splitpath(get_directory(path))
+    selected_directory = Cint(length(path_directories))
+    # Draw a button for each directory that constitutes the current path.
+    for (index, d) in enumerate(path_directories)
+        CImGui.Button(d) && (selected_directory = Cint(index);)
+        CImGui.SameLine()
+    end
+    # If a button is clicked then we keep only the directories up-to and including the clicked button.
+    truncated_directories = selected_directory == 1 ? joinpath(first(path_directories)) : joinpath(path_directories[1:selected_directory]...)
+    path₂ = Path(truncated_directories, get_filename(path))
+    set_path!(model, path₂, UnconfirmedStatus())
+end
+
+
+function facilitate_directory_file_selection!(model::FileDialogModel)
+    # Make a list of files and directories that are visibile from the current directory.
+    CImGui.NewLine()
+    CImGui.BeginChild("Directory and File Listing", CImGui.ImVec2(CImGui.GetWindowWidth() * 0.98, -CImGui.GetWindowHeight() * 0.2))
+        CImGui.Columns(1)
+        handle_directory_selection!(model)
+        handle_file_selection!(model)
+    CImGui.EndChild()
+end
+
+function handle_directory_selection!(model::FileDialogModel)
+    path = get_path(model, UnconfirmedStatus())
+    current_directory = get_directory(path)
+    visible_directories = filter(p->is_readable_dir(joinpath(current_directory, p)), readdir(current_directory))
+    for (n, foldername) in enumerate(visible_directories)
+        # When the user clicks on a directory then change directory by appending the selected directory to the current path.
+        if CImGui.Selectable("[Dir] " * "$foldername")
+            selected_directory = joinpath(current_directory, foldername)
+            path₂ = Path(selected_directory, "")
+            set_path!(model, path₂, UnconfirmedStatus())
+        end
+    end
+end
+
+function handle_file_selection!(model::FileDialogModel)
+    path = get_path(model, UnconfirmedStatus())
+    current_directory = get_directory(path)
+    visible_files = filter(p->is_queryable_file(joinpath(current_directory, p)), readdir(current_directory))
+    selected_file = Cint(0)
+    for (n, filename) in enumerate(visible_files)
+        if CImGui.Selectable("[File] " * "$filename")
+            path₂ = Path(current_directory, filename)
+            set_path!(model, path₂, UnconfirmedStatus())
+        end
+    end
+    handle_keyboard!(model)
+end
+
+function handle_keyboard!(model::FileDialogModel)
+    CImGui.Text("File Name:")
+    CImGui.SameLine()
+    path = get_path(model, UnconfirmedStatus())
+    current_directory = get_directory(path)
+    filename₀ = get_filename(path)
+    filename₁ = filename₀*"\0"^(1)
+    # Allow up to 255 characters for the filename.
+    pad_null = max(0, 255 - length(filename₁) + 1)
+    buffer = filename₁*"\0"^(pad_null)
+    CImGui.InputText("",buffer, length(buffer))
+    filename₂ = extract_string(buffer)
+    path₂ = Path(current_directory, filename₂)
+    set_path!(model, path₂, UnconfirmedStatus())
+end
+
+function extract_string(buffer)
+    first_nul = findfirst(isequal('\0'), buffer) - 1
+    buffer[1:first_nul]
+end
+
+function handle_cancellation_confirmation!(control::FileDialogController, model::FileDialogModel, action::String, importer::AbstractImporter)
+    CImGui.Button("Cancel") && disable!(control)
+    CImGui.SameLine()
+    CImGui.Button(action) && (handle_confirmation!(control, model, importer))
+end
+
+function handle_confirmation!(control::FileDialogController, model::FileDialogModel, importer::AbstractImporter)
+    path = get_path(model, UnconfirmedStatus())
+    directory = get_directory(path)
+    filename = get_filename(path)
+    path_to_file = joinpath(directory, filename)
+    if is_queryable_file(path_to_file)
+        path₂ = Path(directory, filename)
+        set_path!(model, path₂, ConfirmedStatus())
+        enable!(importer)
+        disable!(control)
+    else
+        CImGui.OpenPopup("Does the file exist?")
+    end
+end
+
+
+function handle_file_error_messaging()
+    if CImGui.BeginPopupModal("Does the file exist?", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
+        CImGui.Text("Unable to access the specified file.\nPlease verify that: \n   (1) the file exists; \n   (2) you have permission to access the file.\n\n")
+        CImGui.Separator()
+        CImGui.Button("OK", (120, 0)) && CImGui.CloseCurrentPopup()
+        CImGui.SetItemDefaultFocus()
+        CImGui.EndPopup()
+    end
+end
+
+
+# The isdir function might not have permissions to query certan folders and
+# will thus throw an ERROR: "IOError: stat: permission denied (EACCES)"
+function is_readable_dir(path)
+    flag = false
+    try
+        flag = isdir(path)
+    catch x
+        flag = false
+    end
+    return flag
+end
+
+# The isfile function might not have permissions to query certan files and
+# will thus throw an ERROR: "IOError: stat: permission denied (EACCES)"
+function is_queryable_file(path)
+    flag = false
+    try
+        flag = isfile(path)
+    catch x
+        flag = false
+    end
+    return flag
+end

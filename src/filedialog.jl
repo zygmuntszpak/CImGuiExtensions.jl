@@ -1,5 +1,3 @@
-include("abstract_types.jl")
-
 struct Path
     directory::String
     filename::String
@@ -72,7 +70,7 @@ function get_filename(p::Path)
     p.filename
 end
 
-function (control::FileDialogController)(model::FileDialogModel, properties::AbstractDisplayProperties, importer::AbstractImporter)
+function (control::FileDialogControl)(model::FileDialogModel, properties::AbstractDisplayProperties, importer::AbstractImporter)
     @c CImGui.Begin(get_caption(properties), &control.isenabled)
         facilitate_path_selection!(model)
         facilitate_directory_file_selection!(model)
@@ -156,13 +154,13 @@ function extract_string(buffer)
     buffer[1:first_nul]
 end
 
-function handle_cancellation_confirmation!(control::FileDialogController, model::FileDialogModel, action::String, importer::AbstractImporter)
+function handle_cancellation_confirmation!(control::FileDialogControl, model::FileDialogModel, action::String, importer::AbstractImporter)
     CImGui.Button("Cancel") && disable!(control)
     CImGui.SameLine()
     CImGui.Button(action) && (handle_confirmation!(control, model, importer))
 end
 
-function handle_confirmation!(control::FileDialogController, model::FileDialogModel, importer::AbstractImporter)
+function handle_confirmation!(control::FileDialogControl, model::FileDialogModel, importer::AbstractImporter)
     path = get_path(model, UnconfirmedStatus())
     directory = get_directory(path)
     filename = get_filename(path)

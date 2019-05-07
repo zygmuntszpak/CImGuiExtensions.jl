@@ -1,15 +1,15 @@
-mutable struct FileDialogController <: AbstractDialogController
+mutable struct FileDialogControl <: AbstractDialogControl
     isenabled::Bool
 end
 
-function isenabled(controller::FileDialogController)
+function isenabled(controller::FileDialogControl)
     return controller.isenabled
 end
 
-function enable!(controller::FileDialogController)
+function enable!(controller::FileDialogControl)
     controller.isenabled = true
 end
 
-function disable!(controller::FileDialogController)
+function disable!(controller::FileDialogControl)
     controller.isenabled  = false
 end

@@ -9,7 +9,6 @@ using CImGui: ImVec2, ImVec4, IM_COL32, ImU32
 using CImGuiExtensions
 
 
-
 function filedialog_example()
 
     @static if Sys.isapple()
@@ -54,26 +53,58 @@ function filedialog_example()
 
 
 
+    # # The controller is responsible for instantiating the dialog GUI,
+    # # handling user input and tiggering the file importer once the user
+    # # confirms the selection of a particular file.
+    # control = FileDialogControl(true)
+    # # The model store the path that the user has confirmed, as well as the
+    # # path that the user has selected but not necessarily confirmed.
+    # model = FileDialogModel(Path(pwd(),"hello"), Path(pwd(),"hello"))
+    # # The display properties include the title of the file dialog and what
+    # # action string is to be displayed on the button.
+    # properties = FileDialogDisplayProperties("Open File###CSV", "Open###CSV", ImVec2(0,0), 100, 100)
+    # # The importer is triggered once the user has confirmed the selection of a
+    # # particular path.
+    # load_csv = CSVImporter(false)
+    #
+    #
+    #
+    # control₂ =  FileDialogControl(true)
+    # model₂ = FileDialogModel(Path(pwd(),"hello"), Path(pwd(),"hello"))
+    # properties₂ = FileDialogDisplayProperties("Open File###Image", "Open###Image", ImVec2(0,0), 100, 100)
+    # load_image = ImageImporter(false)
+
     # The controller is responsible for instantiating the dialog GUI,
     # handling user input and tiggering the file importer once the user
     # confirms the selection of a particular file.
-    control = FileDialogController(true)
+    control = FileDialogControl(true)
     # The model store the path that the user has confirmed, as well as the
     # path that the user has selected but not necessarily confirmed.
-    model = FileDialogModel(Path(pwd(),"hello"), Path(pwd(),"hello"))
+    model = FileDialogModel(Path(pwd(),""), Path(pwd(),""))
     # The display properties include the title of the file dialog and what
     # action string is to be displayed on the button.
     properties = FileDialogDisplayProperties("Open File###CSV", "Open###CSV", ImVec2(0,0), 100, 100)
     # The importer is triggered once the user has confirmed the selection of a
     # particular path.
-    load_csv = CSVImporter(false)
+    load_csv = CSVImporter(false, CSVSchema(Empatica(), E4(), SkinConductance()))
+
+    #mvcs = Vector{ModelViewControl}(undef, 0)
+    mvc = ModelViewControl(control, model, properties, load_csv)
+    #push!(mvcs, mvc)
 
 
 
-    control₂ =  FileDialogController(true)
+    control₂ =  FileDialogControl(true)
     model₂ = FileDialogModel(Path(pwd(),"hello"), Path(pwd(),"hello"))
     properties₂ = FileDialogDisplayProperties("Open File###Image", "Open###Image", ImVec2(0,0), 100, 100)
     load_image = ImageImporter(false)
+
+    mvc₂ = ModelViewControl(control₂, model₂, properties₂, load_image)
+    #push!(mvcs, mvc₂)
+
+    mvcs = Dict{String, ModelViewControl}()
+    mvcs["load_empatica_eda"] = mvc
+    mvcs["load_image"] = mvc₂
 
     data = nothing
     while !GLFW.WindowShouldClose(window)
@@ -83,12 +114,12 @@ function filedialog_example()
         ImGui_ImplGlfw_NewFrame()
         CImGui.NewFrame()
 
-        # Display and handle file dialog interactions.
-        isenabled(control) ? control(model, properties, load_csv) : nothing
-        isenabled(control₂) ? control₂(model₂, properties₂, load_image) : nothing
+        for (key, model_view_control) in pairs(mvcs)
+            model_view_control()
+        end
 
         # Load new data based on user selection.
-        data = isenabled(load_csv) ? load_csv(get_path(model,ConfirmedStatus())) : data
+        data = isenabled(load_csv) ? load_csv(get_path(model, ConfirmedStatus())) : data
 
         # rendering
         CImGui.Render()

@@ -11,3 +11,8 @@ abstract type AbstractModelViewControl end
 abstract type AbstractVendor end
 abstract type AbstractProduct end
 abstract type AbstractData end
+abstract type AbstractLayout end
+abstract type AbstractNestedIntervalControl <: AbstractControl end
+abstract type AbstractPlotControl <: AbstractControl end
+abstract type AbstractContext end
+abstract type AbstractPlotContext <: AbstractContext end

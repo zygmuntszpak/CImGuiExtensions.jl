@@ -91,20 +91,48 @@ function filedialog_example()
     #mvcs = Vector{ModelViewControl}(undef, 0)
     mvc = ModelViewControl(control, model, properties, load_csv)
     #push!(mvcs, mvc)
+    csvimport = ImportContext(control, model, properties, load_csv)
 
 
 
     control₂ =  FileDialogControl(true)
     model₂ = FileDialogModel(Path(pwd(),"hello"), Path(pwd(),"hello"))
-    properties₂ = FileDialogDisplayProperties("Open File###Image", "Open###Image", ImVec2(0,0), 100, 100)
+    #properties₂ = FileDialogDisplayProperties("Open File###Image", "Open###Image", ImVec2(0,0), 100, 100)
+    properties₂ = FileDialogDisplayProperties(caption = "Open File###Image", action ="Open###Image")
     load_image = ImageImporter(false)
-
     mvc₂ = ModelViewControl(control₂, model₂, properties₂, load_image)
+
+
+
     #push!(mvcs, mvc₂)
 
     mvcs = Dict{String, ModelViewControl}()
     mvcs["load_empatica_eda"] = mvc
     mvcs["load_image"] = mvc₂
+
+    plotmodel = PlotlinesModel(Float32.(collect(1:200)))
+    #plotproperties = PlotlinesDisplayProperties("eda", "EDA", ImVec4(0.5, 0.5, 0.5, 1), RectangularLayout(ImVec2(60,60), 600, 400), Tickmark(true, Cfloat(10), Cfloat(1), Cfloat(60), identity), Tickmark(true, Cfloat(10),  Cfloat(1),  Cfloat(40), identity), (10,50, 0, 0))
+    plotproperties = PlotlinesDisplayProperties(id = "eda", caption = "EDA", layout = RectangularLayout(ImVec2(60,60), 600, 400))
+    plotcontrol = PlotlinesControl(true)
+    plotcontext = PlotContext(plotcontrol, plotmodel, plotproperties)
+
+    # id::String
+    # caption::String
+    # col::ImVec4 = ImVec4(0,0, 0, 1)
+    # layout::RectangularLayout
+    # xtick::Tickmark = Tickmark()
+    # ytick::Tickmark = Tickmark()
+    # padding::T = (0, 0, 0 ,0)
+
+    # struct PlotlinesDisplayProperties{T <: NTuple} <: AbstractDisplayProperties
+    #     id::String
+    #     caption::String
+    #     col::ImVec4
+    #     layout::RectangularLayout
+    #     xtick::Tickmark
+    #     ytick::Tickmark
+    #     padding::T
+    # end
 
     data = nothing
     while !GLFW.WindowShouldClose(window)
@@ -114,12 +142,16 @@ function filedialog_example()
         ImGui_ImplGlfw_NewFrame()
         CImGui.NewFrame()
 
-        for (key, model_view_control) in pairs(mvcs)
-            model_view_control()
-        end
+        # for (key, model_view_control) in pairs(mvcs)
+        #     model_view_control()
+        # end
 
         # Load new data based on user selection.
         data = isenabled(load_csv) ? load_csv(get_path(model, ConfirmedStatus())) : data
+
+
+        plotcontext()
+
 
         # rendering
         CImGui.Render()

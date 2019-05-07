@@ -1,30 +1,11 @@
-struct Path
-    directory::String
-    filename::String
+Base.@kwdef mutable struct FileDialogModel <: AbstractDialogModel
+    confirmed_path::Path = Path(pwd(), "")
+    unconfirmed_path::Path = Path(pwd(), "")
 end
 
-
-mutable struct FileDialogModel <: AbstractDialogModel
-    confirmed_path::Path
-    unconfirmed_path::Path
+mutable struct FileDialogControl <: AbstractDialogControl
+    isenabled::Bool
 end
-
-
-struct ConfirmedStatus <: AbstractStatus end
-struct UnconfirmedStatus <: AbstractStatus end
-
-struct FileDialogDisplayProperties <: AbstractDisplayProperties
-    caption::String
-    action::String
-    cursor_position::ImVec2
-    width::Cfloat
-    heigh::Cfloat
-end
-
-include("filedialog_controller.jl")
-include("csv_importer.jl")
-include("image_importer.jl")
-
 
 function get_path(model::FileDialogModel, status::ConfirmedStatus)
     model.confirmed_path
@@ -51,7 +32,7 @@ function get_action(property::FileDialogDisplayProperties)
 end
 
 function get_cursor_position(property::FileDialogDisplayProperties)
-    property.cursor_position
+    property.position
 end
 
 function get_width(property::FileDialogDisplayProperties)
@@ -209,4 +190,20 @@ function is_queryable_file(path)
         flag = false
     end
     return flag
+end
+
+function is_readable_file(path)
+    if is_queryable_file(path)
+        return (uperm(path) & 0x04 > 0) ? true :  false
+    else
+        return false
+    end
+end
+
+function is_writeable_file(path)
+    if is_queryable_file(path)
+        return (uperm(path) & 0x02 > 0) ?  true :  false
+    else
+        return false
+    end
 end

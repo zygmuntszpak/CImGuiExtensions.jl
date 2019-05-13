@@ -1,4 +1,4 @@
-struct RectangularLayout <: AbstractLayout
+Base.@kwdef  struct RectangularLayout <: AbstractLayout
     pos::ImVec2
     width::Cfloat
     height::Cfloat

@@ -4,6 +4,7 @@ abstract type AbstractStatus end
 abstract type AbstractDisplayProperties end
 abstract type AbstractOperation end
 abstract type AbstractImporter <: AbstractOperation end
+abstract type AbstractExporter <: AbstractOperation end
 abstract type AbstractControl <: AbstractOperation end
 abstract type AbstractDialogControl <: AbstractControl end
 abstract type AbstractSchema end

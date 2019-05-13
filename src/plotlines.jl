@@ -16,9 +16,12 @@ function (context::PlotContext{<: PlotlinesControl,   <: PlotlinesModel,  <: Plo
         control = context.control
         model = context.model
         display_properties = context.display_properties
-        CImGui.Begin("Main",C_NULL, CImGui.ImGuiWindowFlags_NoBringToFrontOnFocus)
-            isenabled(control) ? control(model, display_properties) : nothing
-        CImGui.End()
+        id = get_id(display_properties)
+        caption = get_caption(display_properties)
+        is_new_window(display_properties) ? CImGui.Begin(caption*id,C_NULL, CImGui.ImGuiWindowFlags_NoBringToFrontOnFocus) : nothing
+        isenabled(control) ? control(model, display_properties) : nothing
+        is_new_window(display_properties) ? CImGui.End() : nothing
+        # CImGui.Begin("Plotlines--"*id,C_NULL, CImGui.ImGuiWindowFlags_NoBringToFrontOnFocus)
 end
 
 function get_data(model::PlotlinesModel)
@@ -30,19 +33,22 @@ function (control::PlotlinesControl)(model::PlotlinesModel, properties::Plotline
     caption = get_caption(properties)
     col = get_col(properties)
     rectangle = get_layout(properties)
-    pos = get_pos(rectangle)
+    xaxis = get_xaxis(properties)
+    yaxis = get_yaxis(properties)
+    #pos = get_pos(rectangle)
+    pos = CImGui.GetCursorScreenPos()
     totalwidth = get_width(rectangle)
     totalheight = get_height(rectangle)
     padding = get_padding(properties)
     data = get_data(model)
-    #CImGui.SetCursorPos(pos.x + padding[2], pos.y + padding[1])
     CImGui.Dummy(ImVec2(0, padding[1]))
     CImGui.Indent(padding[2])
     width = totalwidth - padding[2]
     height = totalheight
     CImGui.PlotLines(id, data , length(data), 0 , caption, minimum(data), maximum(data), (width, height))
-    draw_horizontal_ticks(data, width, height, get_ytick(properties))
-    draw_vertical_ticks(data, width, height, get_xtick(properties))
+    isenabled(xaxis) ? draw_horizontal_ticks(data, width, height, get_ytick(properties)) : nothing
+    isenabled(yaxis) ? draw_vertical_ticks(data, width, height, get_xtick(properties)) : nothing
+    CImGui.Unindent(padding[2])
 end
 
 function draw_vertical_ticks(data, width, height, tick::Tickmark)
@@ -99,8 +105,4 @@ function draw_horizontal_ticks(data, width, height, tick::Tickmark)
             CImGui.AddText(draw_list, ImVec2(x - xoffset, yₙ - yoffset), black, "$str",);
         end
     end
-end
-
-function stretch_linearly(x, A, B, a, b)
-    (x-A) * ((b-a) / (B-A)) + a
 end

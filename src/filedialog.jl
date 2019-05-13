@@ -130,10 +130,11 @@ function handle_keyboard!(model::FileDialogModel)
     set_path!(model, path₂, UnconfirmedStatus())
 end
 
-function extract_string(buffer)
-    first_nul = findfirst(isequal('\0'), buffer) - 1
-    buffer[1:first_nul]
-end
+# Moved to util.jl
+# function extract_string(buffer)
+#     first_nul = findfirst(isequal('\0'), buffer) - 1
+#     buffer[1:first_nul]
+# end
 
 function handle_cancellation_confirmation!(control::FileDialogControl, model::FileDialogModel, action::String, importer::AbstractImporter)
     CImGui.Button("Cancel") && disable!(control)

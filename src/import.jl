@@ -1,3 +1,6 @@
+struct GenericVendor <: AbstractVendor end
+struct GenericProduct <: AbstractProduct end
+
 mutable struct CSVImporter{T <: AbstractSchema} <: AbstractImporter
     isenabled::Bool
     schema::T
@@ -18,6 +21,10 @@ end
 function (load::CSVImporter{<:AbstractSchema})(path::Path)
     @show "Inside generic CSV importer..."
     disable!(load)
+    load_dataframe(path)
+end
+
+function load_dataframe(path::Path)
     path₁ = joinpath(get_directory(path), get_filename(path))
     data = nothing
     if is_readable_file(path₁)
@@ -49,6 +56,24 @@ function (load::CSVImporter{<:AbstractSchema})(path::Path)
     data
 end
 
+# Import Labelled Intervals
+function (load::CSVImporter{<:CSVSchema{<: GenericVendor, <: GenericProduct, <: IntervalLabels}})(path::Path)
+    disable!(load)
+    df = load_dataframe(path)
+    dict = Dict{String, LabelledInterval}()
+    for row in eachrow(df)
+        label = row[:label]
+        start = Float64(row[:start])
+        stop = Float64(row[:stop])
+        i₀ = row[:first]
+        s = row[:step]
+        i₁ = row[:last]
+        interval = i₀:s:i₁
+        dict[label] = LabelledInterval(label, NestedInterval(start = start, stop = stop, interval = interval))
+    end
+     LabelledIntervals("Conditions", dict)
+end
+
 struct ImportContext{T₁ <: AbstractDialogControl,   T₂ <: AbstractDialogModel,  T₃ <: AbstractDisplayProperties, T₄ <: Union{AbstractImporter}} <: AbstractContext
     control::T₁
     model::T₂
@@ -68,4 +93,8 @@ end
 
 function isrunning(context::ImportContext)
         isenabled(context.control) || isenabled(context.action)
+end
+
+function enable!(context::ImportContext)
+    enable!(context.control)
 end

@@ -51,11 +51,11 @@ function get_filename(p::Path)
     p.filename
 end
 
-function (control::FileDialogControl)(model::FileDialogModel, properties::AbstractDisplayProperties, importer::AbstractImporter)
+function (control::FileDialogControl)(model::FileDialogModel, properties::AbstractDisplayProperties, operation::AbstractOperation)
     @c CImGui.Begin(get_caption(properties), &control.isenabled)
         facilitate_path_selection!(model)
         facilitate_directory_file_selection!(model)
-        handle_cancellation_confirmation!(control, model,  get_action(properties), importer)
+        handle_cancellation_confirmation!(control, model,  get_action(properties), operation)
         handle_file_error_messaging()
     CImGui.End()
 end
@@ -136,13 +136,13 @@ end
 #     buffer[1:first_nul]
 # end
 
-function handle_cancellation_confirmation!(control::FileDialogControl, model::FileDialogModel, action::String, importer::AbstractImporter)
+function handle_cancellation_confirmation!(control::FileDialogControl, model::FileDialogModel, action::String, operation::AbstractOperation)
     CImGui.Button("Cancel") && disable!(control)
     CImGui.SameLine()
-    CImGui.Button(action) && (handle_confirmation!(control, model, importer))
+    CImGui.Button(action) && (handle_confirmation!(control, model, operation))
 end
 
-function handle_confirmation!(control::FileDialogControl, model::FileDialogModel, importer::AbstractImporter)
+function handle_confirmation!(control::FileDialogControl, model::FileDialogModel, operation::AbstractOperation)
     path = get_path(model, UnconfirmedStatus())
     directory = get_directory(path)
     filename = get_filename(path)
@@ -150,7 +150,7 @@ function handle_confirmation!(control::FileDialogControl, model::FileDialogModel
     if is_queryable_file(path_to_file)
         path₂ = Path(directory, filename)
         set_path!(model, path₂, ConfirmedStatus())
-        enable!(importer)
+        enable!(operation)
         disable!(control)
     else
         CImGui.OpenPopup("Does the file exist?")

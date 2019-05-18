@@ -1,3 +1,5 @@
+struct IntervalLabels <: AbstractData end
+
 Base.@kwdef mutable struct LabelledInterval <: AbstractModel
     label::String = ""
     nested_interval::NestedInterval

@@ -62,11 +62,25 @@ function draw_vertical_ticks(data, width, height, tick::Tickmark)
         x = pos.x
         y = pos.y
         interpret = get_interpreter(tick)
-        for xₙ in range(x, stop = x + width; length = floor(Int, width / get_spacing(tick)) )
+        # for xₙ in range(x, stop = x + width; length = floor(Int, width / get_spacing(tick)) )
+        #     # This line represents the tick mark.
+        #     CImGui.AddLine(draw_list, ImVec2(xₙ, y), ImVec2(xₙ, y + get_length(tick)), black, get_thickness(tick)) #TODO add tick direction
+        #     # Display value associated with that tickmark
+        #     index = round(Int,stretch_linearly(xₙ, x,  x + width, 1, length(data)))
+        #     # Convert the raw data to a text description after applying the
+        #     # transformation associated with the value2text function.
+        #     str = string(interpret(index))
+        #     xoffset = div(length(str) * CImGui.GetFontSize(), 4)
+        #     yoffset = get_length(tick) + 2
+        #     CImGui.AddText(draw_list, ImVec2(xₙ - xoffset, y + yoffset), black, "$str",);
+        # end
+        gap = floor(Int, width / get_spacing(tick))
+        increment = round(Int, stretch_linearly(gap , 1, width, 1, length(data)))
+        for index in 1:increment:length(data)
+            xₙ = Cfloat(stretch_linearly(index , 1, length(data), x,  x + width))
             # This line represents the tick mark.
             CImGui.AddLine(draw_list, ImVec2(xₙ, y), ImVec2(xₙ, y + get_length(tick)), black, get_thickness(tick)) #TODO add tick direction
             # Display value associated with that tickmark
-            index = round(Int,stretch_linearly(xₙ, x,  x + width, 1, length(data)))
             # Convert the raw data to a text description after applying the
             # transformation associated with the value2text function.
             str = string(interpret(index))
@@ -96,7 +110,7 @@ function draw_horizontal_ticks(data, width, height, tick::Tickmark)
             # This line represents the tick mark.
             CImGui.AddLine(draw_list, ImVec2(x, yₙ), ImVec2(x - get_length(tick), yₙ), black, get_thickness(tick)); #TODO add tick direction
             # Display value associated with that tickmark
-            val = round(Int,stretch_linearly(yₙ, y,  y - height, minval, maxval))
+            val = round(stretch_linearly(yₙ, y,  y - height, minval, maxval); digits = 3)
             # Convert the raw data to a text description after applying the
             # transformation associated with the value2text function.
             str = string(interpret(val))

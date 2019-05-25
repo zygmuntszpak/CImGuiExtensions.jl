@@ -37,7 +37,28 @@ function load_dataframe(path::Path)
     else
         CImGui.OpenPopup("Do you have permission to read the file?")
     end
+    handle_import_error_messages()
+    data
+end
 
+function load_dataframe(path::Path, header::Vector{String})
+    path₁ = joinpath(get_directory(path), get_filename(path))
+    data = nothing
+    if is_readable_file(path₁)
+        try
+            data = CSV.File(path₁; header = header) |> DataFrame
+        catch e
+            println(e)
+            CImGui.OpenPopup("Has the file been corrupted?")
+        end
+    else
+        CImGui.OpenPopup("Do you have permission to read the file?")
+    end
+    handle_import_error_messages()
+    data
+end
+
+function handle_import_error_messages()
     if CImGui.BeginPopupModal("Has the file been corrupted?", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
         CImGui.Text("Unable to open the specified file.\nPlease verify that: \n   (1) the file has not been corrupted; \n   (2) you have permission to access the file.\n\n")
         CImGui.Separator()
@@ -53,7 +74,6 @@ function load_dataframe(path::Path)
         CImGui.SetItemDefaultFocus()
         CImGui.EndPopup()
     end
-    data
 end
 
 # Import Labelled Intervals

@@ -100,7 +100,7 @@ export Path,
        disable!,
        isrunning,
        get_labelled_intervals,
-
+       load_dataframe,
        Empatica,
        E4,
        SkinConductance,

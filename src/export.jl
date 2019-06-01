@@ -69,13 +69,13 @@ function (store::CSVExporter{<:AbstractSchema})(path::Path, data::DataFrame)
     end
 end
 
-function (context::ExportContext)(data::AbstractModel)
+function (context::ExportContext)(data::AbstractModel...)
         control = context.control
         model = context.model
         display_properties = context.display_properties
         action = context.action
         isenabled(control) ? control(model, display_properties, action) : nothing
-        isenabled(action) ? action(get_path(model, ConfirmedStatus()), data) : nothing
+        isenabled(action) ? action(get_path(model, ConfirmedStatus()), data...) : nothing
 end
 
 function isrunning(context::ExportContext)

@@ -1,5 +1,4 @@
 
-
 struct TruncatedPlotContext{T₁ <: AbstractControl, T₂ <: PlotContext,   T₃ <: NestedIntervalContext} <: AbstractPlotContext
     control::T₁
     plot_context::T₂

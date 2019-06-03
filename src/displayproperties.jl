@@ -20,9 +20,9 @@ Base.@kwdef struct Axis
     thickness::Cfloat = Cfloat(1)
 end
 
-Base.@kwdef struct PlotlinesDisplayProperties{T <: NTuple} <: AbstractDisplayProperties
+Base.@kwdef struct PlotlinesDisplayProperties{T₁ <: Function, T₂ <: NTuple} <: AbstractDisplayProperties
     id::String
-    caption::String
+    caption::T₁
     col::ImVec4 = ImVec4(0, 0, 0, 1)
     createwindow::Bool = true
     layout::RectangularLayout
@@ -30,7 +30,7 @@ Base.@kwdef struct PlotlinesDisplayProperties{T <: NTuple} <: AbstractDisplayPro
     xaxis::Axis = Axis()
     xtick::Tickmark = Tickmark()
     ytick::Tickmark = Tickmark()
-    padding::T = (0, 0, 0 ,0)
+    padding::T₂ = (0, 0, 0 ,0)
 end
 
 # Base.@kwdef struct NestedIntervalDisplayProperties{T₁ <: PlotContex, T₂ <: NTuple} <: AbstractDisplayProperties
@@ -78,7 +78,7 @@ function get_id(p::PlotlinesDisplayProperties)
     p.id
 end
 
-function get_caption(p::PlotlinesDisplayProperties)
+function get_captioner(p::PlotlinesDisplayProperties)
     p.caption
 end
 

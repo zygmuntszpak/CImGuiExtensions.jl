@@ -17,7 +17,8 @@ function (context::PlotContext{<: PlotlinesControl,   <: PlotlinesModel,  <: Plo
         model = context.model
         display_properties = context.display_properties
         id = get_id(display_properties)
-        caption = get_caption(display_properties)
+        captioner = get_captioner(display_properties)
+        caption = captioner(nothing)
         is_new_window(display_properties) ? CImGui.Begin(caption*id,C_NULL, CImGui.ImGuiWindowFlags_NoBringToFrontOnFocus) : nothing
         isenabled(control) ? control(model, display_properties) : nothing
         is_new_window(display_properties) ? CImGui.End() : nothing
@@ -30,7 +31,8 @@ end
 
 function (control::PlotlinesControl)(model::PlotlinesModel, properties::PlotlinesDisplayProperties)
     id = get_id(properties)
-    caption = get_caption(properties)
+    captioner = get_captioner(properties)
+    caption = captioner(nothing)
     col = get_col(properties)
     rectangle = get_layout(properties)
     xaxis = get_xaxis(properties)

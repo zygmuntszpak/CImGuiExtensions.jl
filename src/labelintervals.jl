@@ -155,7 +155,7 @@ function (control::LabelIntervalControl)(model::LabelledIntervals, properties::L
         CImGui.SetCursorScreenPos(x₀, pos.y)
         CImGui.InvisibleButton("###interval button $str", ImVec2(x₁ - x₀, height))
         # TODO Improve tooltip
-        CImGui.IsItemHovered() && CImGui.SetTooltip(string("Hello"))
+        #CImGui.IsItemHovered() && CImGui.SetTooltip(string("Hello"))
         if CImGui.IsItemClicked()
             # Update the principal nested interval in accordance with the selection.
             set_start!(control.nested_interval, start)

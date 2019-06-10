@@ -97,20 +97,10 @@ function (context::LabelIntervalContext{<: LabelIntervalControl,   <: LabelledIn
         model = context.model
         display_properties = context.display_properties
         plot_context = context.plot_context
-        # We need to plot the data on top of which we shall place the event markers.
-        # plot_context = context.plot_context
-        # plot_model = plot_context.model
-        # plot_display_properties = plot_context.display_properties
-        # plot_control = plot_context.control
-
-
-        #description = get_description(display_properties)
         id = get_id(display_properties)
         caption = get_caption(display_properties)
         is_new_window(display_properties) ? CImGui.Begin(caption*id,C_NULL, CImGui.ImGuiWindowFlags_NoBringToFrontOnFocus) : nothing
         isenabled(control) ? control(model, display_properties, plot_context) : nothing
-        #isenabled(plot_control) ? control(plot_model, plot_display_properties) : nothing
-        #plot_control(plot_model, plot_display_properties)
         is_new_window(display_properties) ? CImGui.End() : nothing
 end
 
@@ -193,7 +183,6 @@ function (control::LabelIntervalControl)(model::LabelledIntervals, properties::L
     CImGui.SameLine()
     CImGui.Button("Remove Interval Label") && remove_label!(get_labelled_intervals(model), control.buffer)
     CImGui.Unindent(padding[2])
-    #@show control.buffer
 end
 
 function add_label!(labelled_intervals::Dict{String, LabelledInterval}, label::String, ni::NestedInterval)

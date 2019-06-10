@@ -6,7 +6,7 @@ Base.@kwdef struct FileDialogDisplayProperties <: AbstractDisplayProperties
     heigh::Cfloat = Cfloat(200)
 end
 
-# Todo add margin
+# TODO add margin
 Base.@kwdef struct Tickmark{T <: Function}
     isenabled::Bool = true
     len::Cfloat = Cfloat(10)
@@ -32,19 +32,6 @@ Base.@kwdef struct PlotlinesDisplayProperties{T₁ <: Function, T₂ <: NTuple} 
     ytick::Tickmark = Tickmark()
     padding::T₂ = (0, 0, 0 ,0)
 end
-
-# Base.@kwdef struct NestedIntervalDisplayProperties{T₁ <: PlotContex, T₂ <: NTuple} <: AbstractDisplayProperties
-#     id::String
-#     caption::String
-#     col::ImVec4 = ImVec4(0, 0, 0, 1)
-#     layout::RectangularLayout
-#     plotcontext::T₁
-#     padding::T₂ = (0, 0, 0 ,0)
-# end
-
-# function set_caption!(p::PlotlinesDisplayProperties, caption::String)
-#     p.caption = caption
-# end
 
 function get_spacing(tick::Tickmark)
     tick.spacing

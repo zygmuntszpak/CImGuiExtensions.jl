@@ -22,7 +22,6 @@ function (context::PlotContext{<: PlotlinesControl,   <: PlotlinesModel,  <: Plo
         is_new_window(display_properties) ? CImGui.Begin(caption*id,C_NULL, CImGui.ImGuiWindowFlags_NoBringToFrontOnFocus) : nothing
         isenabled(control) ? control(model, display_properties) : nothing
         is_new_window(display_properties) ? CImGui.End() : nothing
-        # CImGui.Begin("Plotlines--"*id,C_NULL, CImGui.ImGuiWindowFlags_NoBringToFrontOnFocus)
 end
 
 function get_data(model::PlotlinesModel)
@@ -37,7 +36,6 @@ function (control::PlotlinesControl)(model::PlotlinesModel, properties::Plotline
     rectangle = get_layout(properties)
     xaxis = get_xaxis(properties)
     yaxis = get_yaxis(properties)
-    #pos = get_pos(rectangle)
     pos = CImGui.GetCursorScreenPos()
     totalwidth = get_width(rectangle)
     totalheight = get_height(rectangle)
@@ -98,6 +96,7 @@ function draw_horizontal_ticks(data, width, height, tick::Tickmark)
     if isenabled(tick)
         draw_list = CImGui.GetWindowDrawList()
         black = Base.convert(ImU32, ImVec4(0,0, 0, 1))
+        col = Base.convert(ImU32, ImVec4(0.95,0.1, 0.1, 0.1))
         pos = CImGui.GetCursorScreenPos()
         # Draw the y-axis
         CImGui.AddLine(draw_list, pos, ImVec2(pos.x, pos.y - height), black, get_thickness(tick));
@@ -108,7 +107,9 @@ function draw_horizontal_ticks(data, width, height, tick::Tickmark)
         y = pos.y
         interpret = get_interpreter(tick)
         # TODO: Perhaps better to iterate over bonafide values and round pixel coordinates?
-        for yₙ in range(y - height, stop = y; length = floor(Int, height / get_spacing(tick)))
+        span = range(y - height, stop = y; length = floor(Int, height / get_spacing(tick)))
+        count = 1
+        for yₙ in span
             # This line represents the tick mark.
             CImGui.AddLine(draw_list, ImVec2(x, yₙ), ImVec2(x - get_length(tick), yₙ), black, get_thickness(tick)); #TODO add tick direction
             # Display value associated with that tickmark
@@ -119,6 +120,11 @@ function draw_horizontal_ticks(data, width, height, tick::Tickmark)
             xoffset = get_length(tick) + 3 + div(length(str) * CImGui.GetFontSize(), 2)
             yoffset = div(CImGui.GetFontSize(), 2)
             CImGui.AddText(draw_list, ImVec2(x - xoffset, yₙ - yoffset), black, "$str",);
+            # Draw a faint filled rectangle as a visual guide for every second row
+            if iseven(count)
+                 CImGui.AddRectFilled(draw_list, ImVec2(x, yₙ), ImVec2(x + width, yₙ + step(span)), col);
+            end
+            count += 1
         end
     end
 end

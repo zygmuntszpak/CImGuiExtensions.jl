@@ -1,32 +1,11 @@
-include("abstract_types.jl")
-
-struct Path
-    directory::String
-    filename::String
+Base.@kwdef mutable struct FileDialogModel <: AbstractDialogModel
+    confirmed_path::Path = Path(pwd(), "")
+    unconfirmed_path::Path = Path(pwd(), "")
 end
 
-
-mutable struct FileDialogModel <: AbstractDialogModel
-    confirmed_path::Path
-    unconfirmed_path::Path
+mutable struct FileDialogControl <: AbstractDialogControl
+    isenabled::Bool
 end
-
-
-struct ConfirmedStatus <: AbstractStatus end
-struct UnconfirmedStatus <: AbstractStatus end
-
-struct FileDialogDisplayProperties <: AbstractDisplayProperties
-    caption::String
-    action::String
-    cursor_position::ImVec2
-    width::Cfloat
-    heigh::Cfloat
-end
-
-include("filedialog_controller.jl")
-include("csv_importer.jl")
-include("image_importer.jl")
-
 
 function get_path(model::FileDialogModel, status::ConfirmedStatus)
     model.confirmed_path
@@ -53,7 +32,7 @@ function get_action(property::FileDialogDisplayProperties)
 end
 
 function get_cursor_position(property::FileDialogDisplayProperties)
-    property.cursor_position
+    property.position
 end
 
 function get_width(property::FileDialogDisplayProperties)
@@ -72,11 +51,11 @@ function get_filename(p::Path)
     p.filename
 end
 
-function (control::FileDialogController)(model::FileDialogModel, properties::AbstractDisplayProperties, importer::AbstractImporter)
+function (control::FileDialogControl)(model::FileDialogModel, properties::AbstractDisplayProperties, operation::AbstractOperation)
     @c CImGui.Begin(get_caption(properties), &control.isenabled)
         facilitate_path_selection!(model)
         facilitate_directory_file_selection!(model)
-        handle_cancellation_confirmation!(control, model,  get_action(properties), importer)
+        handle_cancellation_confirmation!(control, model,  get_action(properties), operation)
         handle_file_error_messaging()
     CImGui.End()
 end
@@ -151,18 +130,14 @@ function handle_keyboard!(model::FileDialogModel)
     set_path!(model, path₂, UnconfirmedStatus())
 end
 
-function extract_string(buffer)
-    first_nul = findfirst(isequal('\0'), buffer) - 1
-    buffer[1:first_nul]
-end
 
-function handle_cancellation_confirmation!(control::FileDialogController, model::FileDialogModel, action::String, importer::AbstractImporter)
+function handle_cancellation_confirmation!(control::FileDialogControl, model::FileDialogModel, action::String, operation::AbstractOperation)
     CImGui.Button("Cancel") && disable!(control)
     CImGui.SameLine()
-    CImGui.Button(action) && (handle_confirmation!(control, model, importer))
+    CImGui.Button(action) && (handle_confirmation!(control, model, operation))
 end
 
-function handle_confirmation!(control::FileDialogController, model::FileDialogModel, importer::AbstractImporter)
+function handle_confirmation!(control::FileDialogControl, model::FileDialogModel, operation::AbstractOperation)
     path = get_path(model, UnconfirmedStatus())
     directory = get_directory(path)
     filename = get_filename(path)
@@ -170,7 +145,7 @@ function handle_confirmation!(control::FileDialogController, model::FileDialogMo
     if is_queryable_file(path_to_file)
         path₂ = Path(directory, filename)
         set_path!(model, path₂, ConfirmedStatus())
-        enable!(importer)
+        enable!(operation)
         disable!(control)
     else
         CImGui.OpenPopup("Does the file exist?")
@@ -211,4 +186,20 @@ function is_queryable_file(path)
         flag = false
     end
     return flag
+end
+
+function is_readable_file(path)
+    if is_queryable_file(path)
+        return (uperm(path) & 0x04 > 0) ? true :  false
+    else
+        return false
+    end
+end
+
+function is_writeable_file(path)
+    if is_queryable_file(path)
+        return (uperm(path) & 0x02 > 0) ?  true :  false
+    else
+        return false
+    end
 end

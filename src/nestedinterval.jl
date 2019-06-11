@@ -6,8 +6,6 @@ Base.@kwdef mutable struct NestedInterval{T₁ <: AbstractRange} <: AbstractMode
     interval::T₁
 end
 
-
-
 Base.@kwdef struct NestedIntervalDisplayProperties{T₁ <: PlotContext, T₂ <: NTuple} <: AbstractDisplayProperties
     id::String
     caption::String

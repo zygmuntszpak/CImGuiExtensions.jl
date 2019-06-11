@@ -98,5 +98,9 @@ export  AbstractModel,
         get_padding,
         get_data,
         get_layout,
+        get_xtick,
+        set_xtick!,
+        get_captioner,
+        get_interpreter,
         stretch_linearly
 end # module

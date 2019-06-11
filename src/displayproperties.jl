@@ -20,7 +20,7 @@ Base.@kwdef struct Axis
     thickness::Cfloat = Cfloat(1)
 end
 
-Base.@kwdef struct PlotlinesDisplayProperties{T₁ <: Function, T₂ <: NTuple} <: AbstractDisplayProperties
+Base.@kwdef mutable struct PlotlinesDisplayProperties{T₁ <: Function, T₂ <: NTuple} <: AbstractDisplayProperties
     id::String
     caption::T₁
     col::ImVec4 = ImVec4(0, 0, 0, 1)
@@ -93,10 +93,18 @@ function get_xtick(p::PlotlinesDisplayProperties)
     p.xtick
 end
 
+function set_xtick!(p::PlotlinesDisplayProperties, xtick::Tickmark)
+    p.xtick = xtick
+end
+
 function get_ytick(p::PlotlinesDisplayProperties)
     p.ytick
 end
 
 function get_padding(p::PlotlinesDisplayProperties)
     p.padding
+end
+
+function set_captioner(captioner::Function)
+    p.caption = captioner
 end

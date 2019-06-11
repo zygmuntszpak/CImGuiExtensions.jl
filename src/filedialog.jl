@@ -153,6 +153,20 @@ function handle_confirmation!(control::FileDialogControl, model::FileDialogModel
 end
 
 
+function handle_confirmation!(control::FileDialogControl, model::FileDialogModel, operation::AbstractExporter)
+    path = get_path(model, UnconfirmedStatus())
+    directory = get_directory(path)
+    filename = get_filename(path)
+    path_to_file = joinpath(directory, filename)
+    path₂ = Path(directory, filename)
+    set_path!(model, path₂, ConfirmedStatus())
+    enable!(operation)
+    disable!(control)
+end
+
+
+
+
 function handle_file_error_messaging()
     if CImGui.BeginPopupModal("Does the file exist?", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
         CImGui.Text("Unable to access the specified file.\nPlease verify that: \n   (1) the file exists; \n   (2) you have permission to access the file.\n\n")

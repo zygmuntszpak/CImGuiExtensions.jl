@@ -38,10 +38,18 @@ function (store::CSVExporter{<:AbstractSchema})(path::Path, li::LabelledInterval
 end
 
 function (store::CSVExporter{<:AbstractSchema})(path::Path, data::DataFrame)
-    @show "Inside generic CSV exporter..."
     disable!(store)
     path₁ = joinpath(get_directory(path), get_filename(path))
-    if is_writeable_file(path₁)
+    # We are trying to create a new file.
+    if !is_queryable_file(path₁)
+        try
+            CSV.write(path₁, data)
+        catch e
+            println(e)
+            CImGui.OpenPopup("Do you have permission to create the file?")
+        end
+    # We are modifying an existing file.
+    elseif is_writeable_file(path₁)
         try
             CSV.write(path₁, data)
         catch e
@@ -50,6 +58,14 @@ function (store::CSVExporter{<:AbstractSchema})(path::Path, data::DataFrame)
         end
     else
         CImGui.OpenPopup("Do you have permission to modify the file?")
+    end
+
+    if CImGui.BeginPopupModal("Do you have permission to create the file?", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
+        CImGui.Text("Unable to write to the specified file.\nPlease verify that you have permission to create the file.\n\n")
+        CImGui.Separator()
+        CImGui.Button("OK", (120, 0)) && CImGui.CloseCurrentPopup()
+        CImGui.SetItemDefaultFocus()
+        CImGui.EndPopup()
     end
 
     if CImGui.BeginPopupModal("Do you have permission to modify the file?", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)

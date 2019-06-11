@@ -74,24 +74,38 @@ function handle_import_error_messages()
         CImGui.SetItemDefaultFocus()
         CImGui.EndPopup()
     end
+
+    if CImGui.BeginPopupModal("Have you opened the appropriate file?", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
+    CImGui.Text("The file format does not to conform to the expected schema.\nPlease verify that the data in the file follows the expected convention.\n\n")
+    CImGui.Separator()
+    CImGui.Button("OK", (120, 0)) && CImGui.CloseCurrentPopup()
+    CImGui.SetItemDefaultFocus()
+    CImGui.EndPopup()
+end
 end
 
 # Import Labelled Intervals
 function (load::CSVImporter{<:CSVSchema{<: GenericVendor, <: GenericProduct, <: IntervalLabels}})(path::Path)
     disable!(load)
     df = load_dataframe(path)
-    dict = Dict{String, LabelledInterval}()
-    for row in eachrow(df)
-        label = row[:label]
-        start = Float64(row[:start])
-        stop = Float64(row[:stop])
-        i₀ = row[:first]
-        s = row[:step]
-        i₁ = row[:last]
-        interval = i₀:s:i₁
-        dict[label] = LabelledInterval(label, NestedInterval(start = start, stop = stop, interval = interval))
+    _, ncol = size(df)
+    if ncol != 6
+        CImGui.OpenPopup("Have you opened the appropriate file?")
+        return nothing
+    else
+        dict = Dict{String, LabelledInterval}()
+        for row in eachrow(df)
+            label = row[:label]
+            start = Float64(row[:start])
+            stop = Float64(row[:stop])
+            i₀ = row[:first]
+            s = row[:step]
+            i₁ = row[:last]
+            interval = i₀:s:i₁
+            dict[label] = LabelledInterval(label, NestedInterval(start = start, stop = stop, interval = interval))
+        end
+        return LabelledIntervals("Conditions", dict)
     end
-     LabelledIntervals("Conditions", dict)
 end
 
 struct ImportContext{T₁ <: AbstractDialogControl,   T₂ <: AbstractDialogModel,  T₃ <: AbstractDisplayProperties, T₄ <: Union{AbstractImporter}} <: AbstractContext

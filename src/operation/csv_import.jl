@@ -19,7 +19,6 @@ function disable!(importer::CSVImporter)
 end
 
 function (load::CSVImporter{<:AbstractSchema})(path::Path)
-    @show "Inside generic CSV importer..."
     disable!(load)
     load_dataframe(path)
 end
@@ -81,54 +80,5 @@ function handle_import_error_messages()
     CImGui.Button("OK", (120, 0)) && CImGui.CloseCurrentPopup()
     CImGui.SetItemDefaultFocus()
     CImGui.EndPopup()
-end
-end
-
-# Import Labelled Intervals
-function (load::CSVImporter{<:CSVSchema{<: GenericVendor, <: GenericProduct, <: IntervalLabels}})(path::Path)
-    disable!(load)
-    df = load_dataframe(path)
-    _, ncol = size(df)
-    if ncol != 6
-        CImGui.OpenPopup("Have you opened the appropriate file?")
-        return nothing
-    else
-        dict = Dict{String, LabelledInterval}()
-        for row in eachrow(df)
-            label = row[:label]
-            start = Float64(row[:start])
-            stop = Float64(row[:stop])
-            i₀ = row[:first]
-            s = row[:step]
-            i₁ = row[:last]
-            interval = i₀:s:i₁
-            dict[label] = LabelledInterval(label, NestedInterval(start = start, stop = stop, interval = interval))
-        end
-        return LabelledIntervals("Conditions", dict)
     end
-end
-
-struct ImportContext{T₁ <: AbstractDialogControl,   T₂ <: AbstractDialogModel,  T₃ <: AbstractDisplayProperties, T₄ <: Union{AbstractImporter}} <: AbstractContext
-    control::T₁
-    model::T₂
-    display_properties::T₃
-    action::T₄
-end
-
-
-function (context::ImportContext)()
-        control = context.control
-        model = context.model
-        display_properties = context.display_properties
-        action = context.action
-        isenabled(control) ? control(model, display_properties, action) : nothing
-        data = isenabled(action) ? action(get_path(model, ConfirmedStatus())) : nothing
-end
-
-function isrunning(context::ImportContext)
-        isenabled(context.control) || isenabled(context.action)
-end
-
-function enable!(context::ImportContext)
-    enable!(context.control)
 end

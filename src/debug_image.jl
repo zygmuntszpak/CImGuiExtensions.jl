@@ -1,8 +1,23 @@
-using CImGuiExtensions
-using GR
+using CImGui
+using CImGui.CSyntax
+using CImGui.GLFWBackend
+using CImGui.OpenGLBackend
+using CImGui.GLFWBackend.GLFW
+using CImGui.OpenGLBackend.ModernGL
+using Printf
+using ImageCore
 
-function launch_video()
 
+function construct_B()
+    B = repeat(1:500, 1, 401)
+    low = colorant"navyblue";
+    medium = colorant"limegreen";
+    high = colorant"yellow";
+    Bcolormap = colorsigned(low,medium,high) ∘ scalesigned(minimum(B),(minimum(B)+maximum(B)) / 2, maximum(B))
+    Bcolormap.(B)
+end
+
+function example(B::AbstractArray)
     @static if Sys.isapple()
         # OpenGL 3.2 + GLSL 150
         glsl_version = 150
@@ -18,12 +33,6 @@ function launch_video()
         # GLFW.WindowHint(GLFW.OPENGL_PROFILE, GLFW.OPENGL_CORE_PROFILE) # 3.2+ only
         # GLFW.WindowHint(GLFW.OPENGL_FORWARD_COMPAT, GL_TRUE) # 3.0+ only
     end
-
-
-
-
-
-
 
     # setup GLFW error callback
     error_callback(err::GLFW.GLFWError) = @error "GLFW ERROR: code $(err.code) msg: $(err.description)"
@@ -41,26 +50,27 @@ function launch_video()
     # setup Dear ImGui style
     CImGui.StyleColorsDark()
 
+
+    # create texture for image drawing
+    img₀ = B
+    img₁= transpose(img₀)
+    img_width, img_height = size(img₁)
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+    image_id = ImGui_ImplOpenGL3_CreateImageTexture(img_width, img_height, format = GL_RGBA)
+    img′ = unsafe_wrap(Array{UInt8,3}, convert(Ptr{UInt8}, pointer(img₁)), (Cint(3), Cint(img_width), Cint(img_height)))
+    ImGui_ImplOpenGL3_UpdateImageTexture(image_id, img′, img_width, img_height; format = GL_RGB)
+
+
     # setup Platform/Renderer bindings
     ImGui_ImplGlfw_InitForOpenGL(window, true)
     ImGui_ImplOpenGL3_Init(glsl_version)
 
-    stream_webcam = false
+    demo_open = true
     clear_color = Cfloat[0.45, 0.55, 0.60, 1.00]
-    show_another_window = true
-    counter = 0
-
-
-    # setup camera
-    f = VideoIO.openvideo(video_file)
-    # The OpenGL library expects RGBA UInt8 data layed out in a width x height format.
-    texture₀ = ImGui_ImplOpenGL3_CreateImageTexture(f.width, f.height, format = GL_RGB)
-
-    # Capture the first frame so that we can initialize a buffer to store each
-    # frame that is read from the webcam.
-    imageₙ = read(f)
-
     while !GLFW.WindowShouldClose(window)
+        demo_open # oh my global scope
+        image_id, img_width, img_height
+
         GLFW.PollEvents()
         # start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame()
@@ -68,17 +78,7 @@ function launch_video()
         CImGui.NewFrame()
 
         CImGui.Begin("Image Demo")
-        @c CImGui.Checkbox("Plot Data", &stream_webcam)
-
-        if stream_webcam
-            # consume the next camera frame
-            !eof(f) && read!(f, imageₙ)
-            imageₙ′ = unsafe_wrap(Array{UInt8,3}, convert(Ptr{UInt8}, pointer(imageₙ)), (Cint(3), f.width, f.height))
-            ImGui_ImplOpenGL3_UpdateImageTexture(texture₀ , imageₙ′, f.width, f.height; format = GL_RGB)
-            CImGui.Image(Ptr{Cvoid}(texture₀), (f.width, f.height))
-        end
-
-        CImGui.Text(@sprintf("Application average %.3f ms/frame (%.1f FPS)", 1000 / CImGui.GetIO().Framerate, CImGui.GetIO().Framerate))
+            CImGui.Image(Ptr{Cvoid}(image_id), (img_width, img_height))
         CImGui.End()
 
         # rendering
@@ -89,19 +89,17 @@ function launch_video()
         glClearColor(clear_color...)
         glClear(GL_COLOR_BUFFER_BIT)
         ImGui_ImplOpenGL3_RenderDrawData(CImGui.GetDrawData())
+
         GLFW.MakeContextCurrent(window)
         GLFW.SwapBuffers(window)
     end
-
-
 
     # cleanup
     ImGui_ImplOpenGL3_Shutdown()
     ImGui_ImplGlfw_Shutdown()
     CImGui.DestroyContext(ctx)
     GLFW.DestroyWindow(window)
-    close(f)
-
-
-
 end
+
+# Run the demo
+example(construct_B())

@@ -1,54 +1,5 @@
-Base.@kwdef mutable struct FileDialogModel <: AbstractDialogModel
-    confirmed_path::Path = Path(pwd(), "")
-    unconfirmed_path::Path = Path(pwd(), "")
-end
-
 mutable struct FileDialogControl <: AbstractDialogControl
     isenabled::Bool
-end
-
-function get_path(model::FileDialogModel, status::ConfirmedStatus)
-    model.confirmed_path
-end
-
-function get_path(model::FileDialogModel, status::UnconfirmedStatus)
-    model.unconfirmed_path
-end
-
-function set_path!(model::FileDialogModel, path::Path, status::ConfirmedStatus)
-    model.confirmed_path = path
-end
-
-function set_path!(model::FileDialogModel, path::Path, status::UnconfirmedStatus)
-    model.unconfirmed_path = path
-end
-
-function get_caption(property::FileDialogDisplayProperties)
-    property.caption
-end
-
-function get_action(property::FileDialogDisplayProperties)
-    property.action
-end
-
-function get_cursor_position(property::FileDialogDisplayProperties)
-    property.position
-end
-
-function get_width(property::FileDialogDisplayProperties)
-    property.get_width
-end
-
-function get_height(property::FileDialogDisplayProperties)
-    property.height
-end
-
-function get_directory(p::Path)
-    p.directory
-end
-
-function get_filename(p::Path)
-    p.filename
 end
 
 function (control::FileDialogControl)(model::FileDialogModel, properties::AbstractDisplayProperties, operation::AbstractOperation)
@@ -164,9 +115,6 @@ function handle_confirmation!(control::FileDialogControl, model::FileDialogModel
     disable!(control)
 end
 
-
-
-
 function handle_file_error_messaging()
     if CImGui.BeginPopupModal("Does the file exist?", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
         CImGui.Text("Unable to access the specified file.\nPlease verify that: \n   (1) the file exists; \n   (2) you have permission to access the file.\n\n")
@@ -176,7 +124,6 @@ function handle_file_error_messaging()
         CImGui.EndPopup()
     end
 end
-
 
 # The isdir function might not have permissions to query certan folders and
 # will thus throw an ERROR: "IOError: stat: permission denied (EACCES)"

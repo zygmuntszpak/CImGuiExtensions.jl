@@ -3,6 +3,7 @@ mutable struct FileDialogControl <: AbstractDialogControl
 end
 
 function (control::FileDialogControl)(model::FileDialogModel, properties::AbstractDisplayProperties, operation::AbstractOperation)
+    CImGui.SetNextWindowSize(ImVec2(get_width(properties), get_height(properties)))
     @c CImGui.Begin(get_caption(properties), &control.isenabled)
         facilitate_path_selection!(model)
         facilitate_directory_file_selection!(model)

@@ -21,3 +21,7 @@ end
 function enable!(context::ImportContext)
     enable!(context.control)
 end
+
+function disable!(context::ImportContext)
+    disable!(context.control)
+end

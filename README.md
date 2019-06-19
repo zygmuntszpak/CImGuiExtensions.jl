@@ -15,4 +15,4 @@ Because this package is currently under active development the API may continue 
 
 ## Examples
 ### File Dialog
-![Image](../examples/open_file_example?raw=true)
+![File Dialog Animation](examples/open_file_example.gif?raw=true)

@@ -4,6 +4,22 @@ mutable struct LabelIntervalControl <: AbstractControl
     buffer::String
 end
 
+function get_start(control::LabelIntervalControl)
+    get_start(control.nested_interval)
+end
+
+function set_start!(control::LabelIntervalControl, val::Number)
+    set_start!(control.nested_interval, val)
+end
+
+function get_stop(control::LabelIntervalControl)
+    get_stop(control.nested_interval)
+end
+
+function set_stop!(control::LabelIntervalControl, val::Number)
+    set_stop!(control.nested_interval, val)
+end
+
 function (control::LabelIntervalControl)(model::LabelledIntervals, properties::LabelIntervalDisplayProperties, plot_context::AbstractContext)
     id = get_id(properties)
     caption = get_caption(properties)
@@ -13,16 +29,13 @@ function (control::LabelIntervalControl)(model::LabelledIntervals, properties::L
     totalwidth = get_width(rectangle)
     totalheight = get_height(rectangle)
     padding = get_padding(properties)
-    CImGui.Dummy(ImVec2(0, padding[1]))
     width = totalwidth - padding[2]
     height = totalheight
-    CImGui.Indent(padding[2])
-    pos = CImGui.GetCursorScreenPos()
-    #CImGui.InvisibleButton("###Events Overview Button", ImVec2(width, height))
-    CImGui.Unindent(padding[2])
-    CImGui.SetCursorScreenPos(pos.x, pos.y)
+    
     # Plot the overview
+    pos = CImGui.GetCursorScreenPos()
     plot_context()
+    pos = ImVec2(pos.x + padding[2], pos.y + padding[1] + 1)
 
     draw_list = CImGui.GetWindowDrawList()
     yoffset = 3
@@ -60,6 +73,9 @@ function (control::LabelIntervalControl)(model::LabelledIntervals, properties::L
         CImGui.SetCursorScreenPos(pos.x, pos.y)
     end
 
+    # TODO investigate IndentSpacing
+    !isempty(get_labelled_intervals(model)) ? CImGui.SetCursorScreenPos(pos.x, pos.y + height + yoffset + 4) : nothing
+
     # Draw indicators for the currently selected interval
     current_nested_interval = control.nested_interval
     interval = get_interval(current_nested_interval)
@@ -72,8 +88,6 @@ function (control::LabelIntervalControl)(model::LabelledIntervals, properties::L
     CImGui.AddLine(draw_list, ImVec2(x₁, pos.y + yoffset), ImVec2(x₁ , pos.y + height + yoffset), Base.convert(ImU32, ImVec4(0.0, 0.0, 0.0, 0.9)), Cfloat(2));
 
     # Handle creation of new event labels
-    CImGui.NewLine()
-    CImGui.NewLine()
     CImGui.Indent(padding[2])
     CImGui.PushItemWidth(150)
     CImGui.InputText("###event description", control.buffer, length(control.buffer))
@@ -89,6 +103,7 @@ function add_label!(labelled_intervals::Dict{String, LabelledInterval}, label::S
     key = extract_string(label)
     labelled_intervals[key] = LabelledInterval(key, copy(ni))
 end
+
 
 function remove_label!(labelled_intervals::Dict{String, LabelledInterval}, label::String)
     key = extract_string(label)

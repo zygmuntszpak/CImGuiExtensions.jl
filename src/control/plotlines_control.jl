@@ -16,13 +16,13 @@ function (control::PlotlinesControl)(model::PlotlinesModel, properties::Plotline
     padding = get_padding(properties)
     data = get_data(model)
     CImGui.Dummy(ImVec2(0, padding[1]))
-    CImGui.Indent(padding[2])
+    padding[2] == 0 ? nothing : CImGui.Indent(padding[2])
     width = totalwidth - padding[2]
     height = totalheight
     CImGui.PlotLines(id, data , length(data), 0 , caption, minimum(data), maximum(data), (width, height))
     isenabled(xaxis) ? draw_horizontal_ticks(data, width, height, get_ytick(properties)) : nothing
     isenabled(yaxis) ? draw_vertical_ticks(data, width, height, get_xtick(properties)) : nothing
-    CImGui.Unindent(padding[2])
+    padding[2] == 0 ? nothing : CImGui.Unindent(padding[2])
 end
 
 function draw_vertical_ticks(data, width, height, tick::Tickmark)

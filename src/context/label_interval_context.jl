@@ -16,3 +16,15 @@ function (context::LabelIntervalContext{<: LabelIntervalControl,   <: LabelledIn
         isenabled(control) ? control(model, display_properties, plot_context) : nothing
         is_new_window(display_properties) ? CImGui.End() : nothing
 end
+
+function isrunning(context::LabelIntervalContext)
+        isenabled(context.control)
+end
+
+function enable!(context::LabelIntervalContext)
+    enable!(context.control)
+end
+
+function disable!(context::LabelIntervalContext)
+    disable!(context.control)
+end
